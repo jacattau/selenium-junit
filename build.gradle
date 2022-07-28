@@ -1,0 +1,72 @@
+import org.openqa.selenium.remote.BrowserType
+import java.text.SimpleDateFormat
+
+buildscript {
+    ext['seleniumVersion']='3.141.59'
+
+    dependencies {
+        classpath "org.seleniumhq.selenium:selenium-remote-driver:${seleniumVersion}"
+    }
+}
+
+plugins {
+    id 'java'
+}
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+ext {
+    availableBrowsers = [BrowserType.CHROME, BrowserType.FIREFOX, BrowserType.EDGE]
+    browsers = [Local: project.availableBrowsers, Grid: project.availableBrowsers]
+
+    testTypes = ["Smoke", "Full"]
+}
+
+
+dependencies {
+    testImplementation 'io.github.bonigarcia:webdrivermanager:5.1.1'
+    testImplementation "org.seleniumhq.selenium:selenium-remote-driver:${seleniumVersion}"
+    testImplementation "org.seleniumhq.selenium:selenium-server:${seleniumVersion}"
+    testImplementation "org.seleniumhq.selenium:selenium-java:${seleniumVersion}"
+    testImplementation('org.junit.jupiter:junit-jupiter:5.8.2')
+}
+
+def startTime
+task printTimes {
+
+    doLast {
+        println "Test start time: " + startTime
+        println "Test end time: " + getDate()
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+tasks.withType(Test){
+    useJUnitPlatform()
+    dependsOn clean
+    systemProperties System.properties
+
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+
+    maxParallelForks = !System.getProperty("parallel").equals(null) ? System.getProperty("parallel").toInteger() : 3
+
+    doFirst {startTime = getDate()}
+
+    finalizedBy(printTimes)
+}
+
+def getDate() {
+    Date dNow = new Date()
+    SimpleDateFormat ft = new SimpleDateFormat ("MM.dd.yyyy hh:mma")
+    return ft.format(dNow)
+}
